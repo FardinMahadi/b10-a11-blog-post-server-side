@@ -29,10 +29,7 @@ async function run() {
     app.post("/users", async (req, res) => {
       try {
         const newUser = req.body;
-        console.log(newUser);
-
         const result = await usersCollection.insertOne(newUser);
-
         res.send(result);
       } catch (error) {
         res.status(500).json({ error: error.message });
