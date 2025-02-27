@@ -24,8 +24,17 @@ async function run() {
 
     const database = client.db("TechTrails");
     const usersCollection = database.collection("users");
-    const blogssCollection = database.collection("blogs");
+    const blogsCollection = database.collection("blogs");
 
+    // all get
+    app.get("/users", async (req, res) => {
+      const email = req.query.email;
+      console.log(email);
+
+      if (!email) return res.status(400).json({ error: "Email is required" });
+    });
+
+    // all post
     app.post("/users", async (req, res) => {
       try {
         const newUser = req.body;
