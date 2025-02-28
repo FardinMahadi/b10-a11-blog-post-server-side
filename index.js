@@ -34,6 +34,16 @@ async function run() {
       if (!email) return res.status(400).json({ error: "Email is required" });
     });
 
+    app.get("/recentblogs", async (req, res) => {
+      try {
+        const cursor = blogsCollection.find().sort({ date: -1 }).limit(6);
+        const blogs = await cursor.toArray();
+        res.send(blogs);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // all post
     app.post("/users", async (req, res) => {
       try {
