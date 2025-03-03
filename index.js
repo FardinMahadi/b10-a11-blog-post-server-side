@@ -53,6 +53,16 @@ async function run() {
       }
     });
 
+    app.get("/featuredblogs", async (req, res) => {
+      try {
+        const cursor = blogsCollection.find({ featured: true });
+        const blogs = await cursor.toArray();
+        res.send(blogs);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     // according to blog id
     app.get("/blog/:id", async (req, res) => {
       try {
