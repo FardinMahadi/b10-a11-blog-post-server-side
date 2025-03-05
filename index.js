@@ -31,7 +31,9 @@ async function run() {
       const email = req.query.email;
       console.log(email);
 
-      if (!email) return res.status(400).json({ error: "Email is required" });
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
     });
 
     app.get("/blogs", async (req, res) => {
@@ -84,6 +86,16 @@ async function run() {
       try {
         const newUser = req.body;
         const result = await usersCollection.insertOne(newUser);
+        res.send(result);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    app.post("/blogs", async (req, res) => {
+      try {
+        const newBlog = req.body;
+        const result = await blogsCollection.insertOne(newBlog);
         res.send(result);
       } catch (error) {
         res.status(500).json({ error: error.message });
