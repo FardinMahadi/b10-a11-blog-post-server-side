@@ -29,7 +29,6 @@ async function run() {
     // all get
     app.get("/users", async (req, res) => {
       const email = req.query.email;
-      console.log(email);
 
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
@@ -85,11 +84,40 @@ async function run() {
         const query = { _id: new ObjectId(id) };
         const blog = await blogsCollection.findOne(query);
 
-        console.log(blog);
-
         res.send(blog);
       } catch (error) {
         res.status(500).json({ error: error.message });
+      }
+    });
+
+    // to get all wish list from user collection
+    app.get("/wishlist", async (req, res) => {
+      const email = req.query.email;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      try {
+        const user = await usersCollection.findOne({ email: email });
+
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const wishlist = user.wishlist || [];
+
+        const blogs = await blogsCollection
+          .find({
+            _id: {
+              $in: wishlist.map((id) => new ObjectId(id)),
+            },
+          })
+          .toArray();
+
+        res.json(blogs);
+      } catch (err) {
+        res.status(500).json({ error: err.message });
       }
     });
 
