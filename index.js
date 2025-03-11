@@ -98,8 +98,16 @@ async function run() {
     app.post("/users", async (req, res) => {
       try {
         const newUser = req.body;
-        const result = await usersCollection.insertOne(newUser);
-        res.send(result);
+
+        const findUser = await usersCollection.findOne({
+          email: newUser.email,
+        });
+        if (findUser) {
+          return res.status(400).json({ error: "User already exists" });
+        } else {
+          const result = await usersCollection.insertOne(newUser);
+          res.send(result);
+        }
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
@@ -112,6 +120,32 @@ async function run() {
         res.send(result);
       } catch (error) {
         res.status(500).json({ error: error.message });
+      }
+    });
+
+    // All patch
+    app.patch("/wishlist", async (req, res) => {
+      const data = req.body;
+      const email = data.email;
+      const _id = data._id;
+
+      try {
+        const query = { email: email };
+        const updateDoc = {
+          $addToSet: { wishlist: _id },
+        };
+
+        const result = await usersCollection.updateOne(query, updateDoc);
+
+        if (result.modifiedCount > 0) {
+          res.json({ message: "Wishlist updated successfully" });
+        } else {
+          res
+            .status(404)
+            .json({ error: "User not found or wishlist not updated" });
+        }
+      } catch (err) {
+        res.status(500).json({ error: err.message });
       }
     });
 
