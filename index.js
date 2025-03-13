@@ -25,6 +25,7 @@ async function run() {
     const database = client.db("TechTrails");
     const usersCollection = database.collection("users");
     const blogsCollection = database.collection("blogs");
+    const commentCollection = database.collection("comment");
 
     // all get
     app.get("/users", async (req, res) => {
@@ -121,6 +122,28 @@ async function run() {
       }
     });
 
+    // Get comments for a specific blog ID
+    app.get("/comment", async (req, res) => {
+      const blogId = req.query.blogId; // Get the blog ID from query parameters
+
+      if (!blogId) {
+        return res.status(400).json({ error: "Blog ID is required" });
+      }
+
+      try {
+        // Find the comments for the specified blog ID
+        const comments = await commentCollection.findOne({ blogId });
+
+        if (comments) {
+          res.json(comments.commentList); // Return the commentList if found
+        } else {
+          res.status(404).json({ error: "No comments found for this blog" });
+        }
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    });
+
     // all post
     // user date
     app.post("/users", async (req, res) => {
@@ -148,6 +171,47 @@ async function run() {
         res.send(result);
       } catch (error) {
         res.status(500).json({ error: error.message });
+      }
+    });
+
+    // post comment
+    app.post("/comment", async (req, res) => {
+      try {
+        const newComment = req.body;
+        console.log(newComment);
+
+        const blogId = newComment.blogId;
+        const formatedComment = {
+          userId: newComment.userId,
+          userName: newComment.userName,
+          userImg: newComment.userImg,
+          comment: newComment.comment,
+        };
+
+        const findBlog = await commentCollection.findOne({ blogId });
+
+        if (!findBlog) {
+          const result = await commentCollection.insertOne({
+            blogId,
+            commentList: [formatedComment],
+          });
+          res.status(201).json({
+            message: "Comment added successfully",
+            id: result.insertedId,
+          });
+        } else {
+          const result = await commentCollection.updateOne(
+            { blogId },
+            {
+              $push: {
+                commentList: formatedComment,
+              },
+            }
+          );
+          res.json({ message: "Comment appended successfully" });
+        }
+      } catch (err) {
+        res.status(500).json({ error: err.message });
       }
     });
 
