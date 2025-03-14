@@ -85,7 +85,6 @@ async function run() {
         return res.status(400).json({ error: "Email is required" });
       }
 
-      console.log(req.cookies?.token);
       if (req.user.email !== req.query.email) {
         // token email !== query email
         return res.status(403).send({ message: "forbidden access" });
@@ -114,14 +113,8 @@ async function run() {
       }
     });
 
-    app.get("/recentblogs", varifyToken, async (req, res) => {
+    app.get("/recentblogs", async (req, res) => {
       try {
-        // console.log(req.cookies?.token);
-        // if (req.user.email !== req.query.email) {
-        //   // token email !== query email
-        //   return res.status(403).send({ message: "forbidden access" });
-        // }
-
         const cursor = blogsCollection.find().sort({ date: -1 }).limit(6);
         const blogs = await cursor.toArray();
         res.send(blogs);
