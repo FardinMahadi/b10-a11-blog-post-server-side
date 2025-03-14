@@ -20,7 +20,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-const varifyToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   const token = req.cookies?.token;
 
   if (!token) {
@@ -48,9 +48,29 @@ const client = new MongoClient(uri, {
   },
 });
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
+
+let isConnected = false;
+
+async function connectDB() {
+  if (!isConnected) {
+    try {
+      await client.connect();
+      isConnected = true;
+      console.log("Connected to MongoDB");
+    } catch (error) {
+      console.error("Error connecting to MongoDB:", error.message);
+    }
+  }
+}
+
 async function run() {
   try {
-    await client.connect();
+    await connectDB();
 
     const database = client.db("TechTrails");
     const usersCollection = database.collection("users");
@@ -58,33 +78,28 @@ async function run() {
     const commentCollection = database.collection("comment");
 
     // auth related APIs
-    app.post("/jwt", (req, res) => {
+    //creating Token
+    app.post("/jwt", async (req, res) => {
       const user = req.body;
+      console.log("user for token", user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "5h",
       });
 
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
-        .send({ success: true });
+      res.cookie("token", token, cookieOptions).send({ success: true });
     });
 
-    app.post("/logout", (req, res) => {
+    //clearing Token
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log("logging out", user);
       res
-        .clearCookie("token", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
+        .clearCookie("token", { ...cookieOptions, maxAge: 0 })
         .send({ success: true });
     });
 
     // all get
-    app.get("/users", varifyToken, async (req, res) => {
+    app.get("/users", verifyToken, async (req, res) => {
       const email = req.query.email;
 
       if (!email) {
@@ -193,7 +208,9 @@ async function run() {
 
       try {
         // Find the comments for the specified blog ID
-        const comments = await commentCollection.findOne({ blogId });
+        const comments = await commentCollection.findOne({
+          blogId: new ObjectId(blogId),
+        });
 
         if (comments) {
           res.json(comments.commentList); // Return the commentList if found
@@ -248,7 +265,9 @@ async function run() {
           comment: newComment.comment,
         };
 
-        const findBlog = await commentCollection.findOne({ blogId });
+        const findBlog = await commentCollection.findOne({
+          blogId: new ObjectId(blogId),
+        });
 
         if (!findBlog) {
           const result = await commentCollection.insertOne({
@@ -305,6 +324,7 @@ async function run() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+    console.log(process.env.DB_USER, process.env.DB_PASSWORD);
   } finally {
     // await client.close();
   }
