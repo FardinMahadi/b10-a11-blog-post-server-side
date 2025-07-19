@@ -1,6 +1,6 @@
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -54,17 +54,14 @@ const cookieOptions = {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 };
 
-let isConnected = false;
-
-async function connectDB() {
-  if (!isConnected) {
-    try {
-      await client.connect();
-      isConnected = true;
-      console.log("Connected to MongoDB");
-    } catch (error) {
-      console.error("Error connecting to MongoDB:", error.message);
-    }
+async function run() {
+  try {
+    await client.connect();
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message);
   }
 }
 
